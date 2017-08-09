@@ -1,7 +1,0 @@
-<%
-jagg.initializer("payment-release-res", {
-	preInitialize:function () {
-		jagg.addFooterJS("application", "jagg", "templates/payment-release-res/js/release-reservation.js");
-	}
-});
-%>

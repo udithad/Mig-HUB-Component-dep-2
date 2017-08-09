@@ -1,6 +1,0 @@
-<%
-	jagg.block("ussd-sub", {
-		initializer:function (data) {},
-		getInputs:function () {}
-	});
-%>

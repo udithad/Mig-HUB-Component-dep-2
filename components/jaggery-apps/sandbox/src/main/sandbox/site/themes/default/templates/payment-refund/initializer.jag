@@ -1,7 +1,0 @@
-<%
-jagg.initializer("payment-refund", {
-	preInitialize:function () {
-		jagg.addFooterJS("application", "jagg", "templates/payment-refund/js/refund.js");
-	    }
-});
-%>

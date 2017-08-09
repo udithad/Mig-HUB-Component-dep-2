@@ -1,6 +1,0 @@
-<%
-	jagg.block("payment-refund", {
-		initializer:function (data) {},
-		getInputs:function () {}
-	});
-%>

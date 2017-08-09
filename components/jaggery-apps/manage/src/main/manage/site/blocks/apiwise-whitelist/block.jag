@@ -1,7 +1,0 @@
-<%
-jagg.block("apiwise-whitelist", {
-	initializer:function (data) {
-
-	} ,
-});
-%>

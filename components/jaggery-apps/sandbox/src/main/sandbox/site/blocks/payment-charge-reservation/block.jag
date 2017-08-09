@@ -1,6 +1,0 @@
-<%
-	jagg.block("payment-charge-reservation", {
-		initializer:function (data) {},
-		getInputs:function () {}
-	});
-%>

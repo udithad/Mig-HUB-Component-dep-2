@@ -1,6 +1,0 @@
-<%
-jagg.block("resources", {
-initializer:function (data) {},
-getInputs:function () {}
-});
-%>

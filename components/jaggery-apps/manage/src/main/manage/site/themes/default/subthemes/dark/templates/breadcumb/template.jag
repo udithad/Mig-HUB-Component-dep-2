@@ -1,3 +1,0 @@
-<% jagg.template("breadcumb", function(inputs, outputs, jagg) { %>
-
-<% }); %>

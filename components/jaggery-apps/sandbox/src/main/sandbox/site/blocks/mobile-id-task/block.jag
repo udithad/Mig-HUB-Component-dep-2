@@ -1,8 +1,0 @@
-<%
-jagg.block("mobile-id-task", {
-    initializer:function (data) {},
-    getInputs:function () {
-        return {};
-    }
-});
-%>

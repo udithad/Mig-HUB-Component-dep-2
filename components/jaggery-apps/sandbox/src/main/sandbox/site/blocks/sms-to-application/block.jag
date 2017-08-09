@@ -1,6 +1,0 @@
-<%
-	jagg.block("sms-to-application", {
-		initializer:function (data) {},
-		getInputs:function () {}
-	});
-%>
