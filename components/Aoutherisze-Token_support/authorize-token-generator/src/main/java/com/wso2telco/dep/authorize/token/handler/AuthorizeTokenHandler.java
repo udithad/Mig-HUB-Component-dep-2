@@ -4,6 +4,7 @@ package com.wso2telco.dep.authorize.token.handler;
 import com.wso2telco.dep.authorize.token.handler.dto.AddNewSpDto;
 import com.wso2telco.dep.authorize.token.handler.dto.TokenDTO;
 import com.wso2telco.dep.authorize.token.handler.util.APIManagerDBUtil;
+import com.wso2telco.dep.authorize.token.handler.util.ReadPropertyFile;
 import com.wso2telco.dep.authorize.token.handler.util.TokenPoolUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -12,7 +13,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.AbstractHandler;
 
-import java.util.ArrayList;
+import java.util.ArrayList; 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,15 +24,24 @@ import java.util.concurrent.Executors;
 public class AuthorizeTokenHandler extends AbstractHandler {
 
     private static final Log log = LogFactory.getLog(AuthorizeTokenHandler.class);
+    public static final String NEW_LINE = System.getProperty("line.separator");
+    private static final String TOKEN_POOL_ENABLED="enable_token_pool";
 
     @Override
     public boolean handleRequest(MessageContext messageContext) {
+        Map<String , String> propertyMap = ReadPropertyFile.getPropertyFile();
         ArrayList<TokenDTO> tokenList = new ArrayList<TokenDTO>();
         Map headerMap = (Map) ((Axis2MessageContext) messageContext).getAxis2MessageContext().
                 getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        String clientId = null;
         String[] message = messageContext.toString().split("client_id=");
         String[] clientIdString = message[1].split("&");
-        String clientId = clientIdString[0];
+        if(clientIdString[0].contains(NEW_LINE)){
+            String[] partials =  clientIdString[0].split(NEW_LINE);
+            clientId = partials[0];
+        }else{
+            clientId = clientIdString[0];
+        }
         if(!clientId.equals(null)){
             AddNewSpDto newSpDto = new AddNewSpDto();
             newSpDto.setOwnerId(clientId);
@@ -40,8 +50,10 @@ public class AuthorizeTokenHandler extends AbstractHandler {
             tokenDTO.setTokenAuth(base64EncodedAouthString);
             tokenList.add(tokenDTO);
             newSpDto.setSpTokenList(tokenList);
-            headerMap.put("Authorization", "Bearer " + tokenDTO.getTokenAuth());
-            callTokenPool(newSpDto);
+            headerMap.put("Authorization", "Bearer " + tokenDTO.getAccessToken());
+            if(propertyMap.get(TOKEN_POOL_ENABLED).equals("true")){
+                callTokenPool(newSpDto);
+            }
             return true;
         }
         else{
@@ -61,6 +73,7 @@ public class AuthorizeTokenHandler extends AbstractHandler {
         executorService.execute(new Runnable() {
             public void run() {
                 log.debug("Calling Token Pool Endpoint");
+
                 TokenPoolUtil.callTokenPoolToAddSpToken(newSpDto);
             }
         });
