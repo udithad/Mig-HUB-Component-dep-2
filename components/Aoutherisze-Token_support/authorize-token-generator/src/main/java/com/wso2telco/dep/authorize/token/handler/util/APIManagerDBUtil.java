@@ -16,7 +16,10 @@ import java.sql.SQLException;
  */
 public class APIManagerDBUtil {
 
-    private final static Log log = LogFactory.getLog(APIManagerDBUtil.class);
+    private static final Log log = LogFactory.getLog(APIManagerDBUtil.class);
+
+    private APIManagerDBUtil() {
+    }
 
     public static TokenDTO getTokenDetailsFromAPIManagerDB(String consumerKey){
         TokenDTO tokenDto = new TokenDTO();
@@ -26,15 +29,13 @@ public class APIManagerDBUtil {
 
         try {
             con = DbUtils.getDbConnection(DataSourceNames.WSO2AM_DB);
-            if (con == null) {
-                throw new Exception("Connection not found");
-            }
             StringBuilder queryString = new StringBuilder("SELECT cp.CONSUMER_SECRET,it.ACCESS_TOKEN , it.REFRESH_TOKEN , it.VALIDITY_PERIOD  ");
             queryString.append("FROM idn_oauth_consumer_apps cp ");
             queryString.append("inner join idn_oauth2_access_token it ");
             queryString.append("on it.CONSUMER_KEY_ID = cp.ID ");
             queryString.append("where cp.CONSUMER_KEY= ?  ");
             queryString.append("AND it.TOKEN_STATE='ACTIVE' ");
+            queryString.append("AND it.AUTHZ_USER= cp.USERNAME");
 
             ps = con.prepareStatement(queryString.toString());
             ps.setString(1, consumerKey);
@@ -55,6 +56,36 @@ public class APIManagerDBUtil {
             DbUtils.closeAllConnections(ps, con, rs);
         }
         return tokenDto;
+    }
+    
+    public static String getAccessTokenForUserInfo(String accessToken) {
+
+        String response = null;
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String sql = "SELECT it.ACCESS_TOKEN FROM idn_oauth2_access_token it INNER JOIN idn_oauth_consumer_apps cp "
+                + "on it.CONSUMER_KEY_ID = cp.ID where CONSUMER_KEY_ID="
+                + "(select CONSUMER_KEY_ID from idn_oauth2_access_token"
+                + " where ACCESS_TOKEN=?) AND it.AUTHZ_USER= cp.USERNAME;";
+        try {
+
+            con = DbUtils.getDbConnection(DataSourceNames.WSO2AM_DB);
+            ps = con.prepareStatement(sql);
+            ps.setString(1, accessToken);
+            log.debug("sql query in APIManagerDBUtil : " + ps);
+            rs = ps.executeQuery();
+            rs.next();
+            response = rs.getString(1);
+
+        } catch (SQLException e) {
+            log.error("database operation error for getAccessTokenForUserInfo() in APIManagerDBUtil : ", e);
+        } catch (Exception e) {
+            log.error("error in APIManagerDBUtil : ", e);
+        } finally {
+            DbUtils.closeAllConnections(ps, con, rs);
+        }
+        return response;
     }
 
 
