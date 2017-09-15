@@ -1,5 +1,19 @@
+/*******************************************************************************
+ * Copyright (c) 2015-2017, WSO2.Telco Inc. (http://www.wso2telco.com)
+ *
+ * All Rights Reserved. WSO2.Telco Inc. licences this file to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package com.wso2telco.dep.apihandler.util;
-
 import com.google.gson.Gson;
 import com.wso2telco.dep.apihandler.dto.AddNewSpDTO;
 import org.apache.commons.logging.Log;
@@ -22,6 +36,7 @@ public class TokenPoolUtil {
     private TokenPoolUtil() {
 
     }
+
     public static void callTokenPoolToAddSpToken(AddNewSpDTO spDto) {
         try {
             Gson gson = new Gson();
@@ -36,7 +51,7 @@ public class TokenPoolUtil {
 
             HttpResponse response = httpClient.execute(postRequest);
             if (response.getStatusLine().getStatusCode() != 200) {
-            log.error("Error Response" + response.getStatusLine().getStatusCode());
+                log.error("Error Response" + response.getStatusLine().getStatusCode());
             }
             httpClient.getConnectionManager().shutdown();
 
@@ -44,7 +59,7 @@ public class TokenPoolUtil {
             log.error("Error occurred while calling Token Pool" + e.getMessage());
 
         } catch (IOException e) {
-           log.error( e.getStackTrace());
+            log.error(e.getStackTrace());
         }
 
     }

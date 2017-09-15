@@ -14,7 +14,6 @@
  * limitations under the License.
  ******************************************************************************/
 package com.wso2telco.dep.apihandler.internal;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.rest.AbstractHandler;
@@ -26,17 +25,14 @@ public class ApiInvocationHandlerServiceComponent {
 
     private static final Log log = LogFactory.getLog(ApiInvocationHandlerServiceComponent.class);
 
-    @Override
     protected void activate(ComponentContext ctx) {
         if (log.isDebugEnabled()) {
             log.debug("API Invocation Handler is activated ");
         }
-        ctx.getBundleContext().registerService(AbstractHandler.class.getName(), new
-                ApiInvocationHandler(), null);
+        ctx.getBundleContext().registerService(AbstractHandler.class.getName(), new ApiInvocationHandler(), null);
 
     }
 
-    @Override
     protected void deactivate(ComponentContext ctx) {
         if (log.isDebugEnabled()) {
             log.debug("API Invocation Handler is deactivated");
