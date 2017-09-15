@@ -1,8 +1,5 @@
-package com.wso2telco.dep.authorize.token.handler.dto;
+package com.wso2telco.dep.apihandler.dto;
 
-/**
- * Created by sheshan on 8/4/17.
- */
 public class TokenDTO {
 
     private int id;

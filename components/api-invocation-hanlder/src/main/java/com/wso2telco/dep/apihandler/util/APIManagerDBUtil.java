@@ -1,19 +1,17 @@
-package com.wso2telco.dep.authorize.token.handler.util;
-
-import com.wso2telco.core.dbutils.DbUtils;
-import com.wso2telco.core.dbutils.util.DataSourceNames;
-import com.wso2telco.dep.authorize.token.handler.dto.TokenDTO;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+package com.wso2telco.dep.apihandler.util;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Created by sheshan on 8/4/17.
- */
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.wso2telco.core.dbutils.DbUtils;
+import com.wso2telco.core.dbutils.util.DataSourceNames;
+import com.wso2telco.dep.apihandler.dto.TokenDTO;
+
 public class APIManagerDBUtil {
 
     private static final Log log = LogFactory.getLog(APIManagerDBUtil.class);
@@ -21,7 +19,7 @@ public class APIManagerDBUtil {
     private APIManagerDBUtil() {
     }
 
-    public static TokenDTO getTokenDetailsFromAPIManagerDB(String consumerKey){
+    public static TokenDTO getTokenDetailsFromAPIManagerDB(String consumerKey) {
         TokenDTO tokenDto = new TokenDTO();
         Connection con = null;
         PreparedStatement ps = null;
@@ -29,7 +27,8 @@ public class APIManagerDBUtil {
 
         try {
             con = DbUtils.getDbConnection(DataSourceNames.WSO2AM_DB);
-            StringBuilder queryString = new StringBuilder("SELECT cp.CONSUMER_SECRET,it.ACCESS_TOKEN , it.REFRESH_TOKEN , it.VALIDITY_PERIOD  ");
+            StringBuilder queryString = new StringBuilder(
+                    "SELECT cp.CONSUMER_SECRET,it.ACCESS_TOKEN , it.REFRESH_TOKEN , it.VALIDITY_PERIOD  ");
             queryString.append("FROM idn_oauth_consumer_apps cp ");
             queryString.append("inner join idn_oauth2_access_token it ");
             queryString.append("on it.CONSUMER_KEY_ID = cp.ID ");
@@ -42,10 +41,10 @@ public class APIManagerDBUtil {
             log.debug("sql query in APIManagerDBUtil : " + ps);
             rs = ps.executeQuery();
             rs.next();
-            tokenDto.setTokenAuth(consumerKey+":"+rs.getString(1));
+            tokenDto.setTokenAuth(consumerKey + ":" + rs.getString(1));
             tokenDto.setAccessToken(rs.getString(2));
             tokenDto.setRefreshToken(rs.getString(3));
-            tokenDto.setTokenValidity(rs.getInt(4));
+            tokenDto.setTokenValidity(rs.getLong(4));
 
         } catch (SQLException e) {
             log.error("database operation error in APIManagerDBUtil : ", e);
@@ -57,7 +56,7 @@ public class APIManagerDBUtil {
         }
         return tokenDto;
     }
-    
+
     public static String getAccessTokenForUserInfo(String accessToken) {
 
         String response = null;
@@ -87,6 +86,5 @@ public class APIManagerDBUtil {
         }
         return response;
     }
-
 
 }

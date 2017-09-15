@@ -1,10 +1,9 @@
-package com.wso2telco.dep.authorize.token.handler;
+package com.wso2telco.dep.apihandler;
 
-import com.wso2telco.dep.authorize.token.handler.dto.AddNewSpDto;
-import com.wso2telco.dep.authorize.token.handler.dto.TokenDTO;
-import com.wso2telco.dep.authorize.token.handler.util.APIManagerDBUtil;
-import com.wso2telco.dep.authorize.token.handler.util.ReadPropertyFile;
-import com.wso2telco.dep.authorize.token.handler.util.TokenPoolUtil;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -13,14 +12,15 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.AbstractHandler;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import com.wso2telco.dep.apihandler.dto.AddNewSpDTO;
+import com.wso2telco.dep.apihandler.dto.TokenDTO;
+import com.wso2telco.dep.apihandler.util.APIManagerDBUtil;
+import com.wso2telco.dep.apihandler.util.ReadPropertyFile;
+import com.wso2telco.dep.apihandler.util.TokenPoolUtil;
 
-public class AuthorizeTokenHandler extends AbstractHandler {
+public class ApiInvocationHandler extends AbstractHandler {
 
-    private static final Log log = LogFactory.getLog(AuthorizeTokenHandler.class);
+    private static final Log log = LogFactory.getLog(ApiInvocationHandler.class);
     public static final String NEW_LINE = System.getProperty("line.separator");
     private static final String TOKEN_POOL_ENABLED = "enable_token_pool";
     private static final String AUTH_ENDPOINT = "oauth2/authorize";
@@ -30,6 +30,7 @@ public class AuthorizeTokenHandler extends AbstractHandler {
     private static final String TEMP_AUTH_HEADER = "tempAuthVal";
     private static final String TOKEN_TYPE = "Bearer";
 
+    @Override
     public boolean handleRequest(MessageContext messageContext) {
         Map headerMap = (Map) ((Axis2MessageContext) messageContext).getAxis2MessageContext().getProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
@@ -94,7 +95,7 @@ public class AuthorizeTokenHandler extends AbstractHandler {
 
     private boolean processResponse(String clientId, Map headerMap, String fullPath) {
 
-        if (clientId==null)
+        if (clientId == null)
             return false;
 
         else if (fullPath.contains(USERINFO_ENDPOINT)) {
@@ -116,7 +117,7 @@ public class AuthorizeTokenHandler extends AbstractHandler {
             if (log.isDebugEnabled()) {
                 log.debug("TOken Pool Service Enabled for Insertion");
             }
-            AddNewSpDto newSpDto = new AddNewSpDto();
+            AddNewSpDTO newSpDto = new AddNewSpDTO();
             ArrayList<TokenDTO> tokenList = new ArrayList<TokenDTO>();
 
             newSpDto.setOwnerId(clientId);
@@ -127,11 +128,12 @@ public class AuthorizeTokenHandler extends AbstractHandler {
         }
     }
 
+    @Override
     public boolean handleResponse(MessageContext messageContext) {
         return true;
     }
 
-    private void callTokenPool(final AddNewSpDto newSpDto) {
+    private void callTokenPool(final AddNewSpDTO newSpDto) {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
 
         executorService.execute(new Runnable() {
