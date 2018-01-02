@@ -16,95 +16,106 @@
 package com.wso2telco.dep.apihandler.dto;
 
 public class TokenDTO {
+	private int id;
 
-    private int id;
-    private int whoId;
-    private String tokenAuth;
-    private long tokenValidity;
-    private boolean valid;
-    private String accessToken;
-    private String refreshToken;
-    private int uc;
-    private long createdTime;
-    private int parentTokenId;
+	private int whoId;
 
-    public int getId() {
-        return id;
-    }
+	private String tokenAuth;
 
-    public void setId(int id) {
-        this.id = id;
-    }
+	private long tokenValidity;
 
-    public int getWhoId() {
-        return whoId;
-    }
+	private boolean valid;
 
-    public void setWhoId(int whoId) {
-        this.whoId = whoId;
-    }
+	private String accessToken;
 
-    public String getTokenAuth() {
-        return tokenAuth;
-    }
+	private String refreshToken;
 
-    public void setTokenAuth(String tokenAuth) {
-        this.tokenAuth = tokenAuth;
-    }
+	private int uc;
 
-    public long getTokenValidity() {
-        return tokenValidity;
-    }
+	private long createdTime;
 
-    public void setTokenValidity(long tokenValidity) {
-        this.tokenValidity = tokenValidity;
-    }
+	private int parentTokenId;
 
-    public boolean isValid() {
-        return valid;
-    }
+	public TokenDTO() {
+	}
 
-    public void setValid(boolean valid) {
-        this.valid = valid;
-    }
+	public int getId() {
+		return id;
+	}
 
-    public String getAccessToken() {
-        return accessToken;
-    }
+	public void setId(int id) {
+		this.id = id;
+	}
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
+	public int getWhoId() {
+		return whoId;
+	}
 
-    public String getRefreshToken() {
-        return refreshToken;
-    }
+	public void setWhoId(int whoId) {
+		this.whoId = whoId;
+	}
 
-    public void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
+	public String getTokenAuth() {
+		return tokenAuth;
+	}
 
-    public int getUc() {
-        return uc;
-    }
+	public void setTokenAuth(String tokenAuth) {
+		this.tokenAuth = tokenAuth;
+	}
 
-    public void setUc(int uc) {
-        this.uc = uc;
-    }
+	public long getTokenValidity() {
+		return tokenValidity;
+	}
 
-    public long getCreatedTime() {
-        return createdTime;
-    }
+	public void setTokenValidity(long tokenValidity) {
+		this.tokenValidity = tokenValidity;
+	}
 
-    public void setCreatedTime(long createdTime) {
-        this.createdTime = createdTime;
-    }
+	public boolean isValid() {
+		return valid;
+	}
 
-    public int getParentTokenId() {
-        return parentTokenId;
-    }
+	public void setValid(boolean valid) {
+		this.valid = valid;
+	}
 
-    public void setParentTokenId(int parentTokenId) {
-        this.parentTokenId = parentTokenId;
-    }
+	public String getAccessToken() {
+		return accessToken;
+	}
+
+	public void setAccessToken(String accessToken) {
+		this.accessToken = accessToken;
+	}
+
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+
+	public void setRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
+	}
+
+	public int getUc() {
+		return uc;
+	}
+
+	public void setUc(int uc) {
+		this.uc = uc;
+	}
+
+	public long getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(long createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public int getParentTokenId() {
+		return parentTokenId;
+	}
+
+	public void setParentTokenId(int parentTokenId) {
+		this.parentTokenId = parentTokenId;
+	}
 }

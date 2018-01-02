@@ -14,7 +14,9 @@
  * limitations under the License.
  ******************************************************************************/
 package com.wso2telco.dep.apihandler;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,137 +35,118 @@ import com.wso2telco.dep.apihandler.util.ReadPropertyFile;
 import com.wso2telco.dep.apihandler.util.TokenPoolUtil;
 
 public class ApiInvocationHandler extends AbstractHandler {
+	private static final Log log = LogFactory.getLog(ApiInvocationHandler.class);
+	public static final String NEW_LINE = System.getProperty("line.separator");
+	private static final String TOKEN_POOL_ENABLED = "enable_token_pool";
+	private static final String AUTH_ENDPOINT = "authorize";
+	private static final String TOKEN_ENDPOINT = "token";
+	private static final String USERINFO_ENDPOINT = "userinfo";
+	private static final String AUTH_HEADER = "Authorization";
+	private static final String TEMP_AUTH_HEADER = "tempAuthVal";
+	private static final String TOKEN_TYPE = "Bearer ";
+	private static Map<String, String> spToken = new HashMap();
 
-    private static final Log log = LogFactory.getLog(ApiInvocationHandler.class);
-    public static final String NEW_LINE = System.getProperty("line.separator");
-    private static final String TOKEN_POOL_ENABLED = "enable_token_pool";
-    private static final String AUTH_ENDPOINT = "oauth2/authorize";
-    private static final String TOKEN_ENDPOINT = "oauth2/token";
-    private static final String USERINFO_ENDPOINT = "oauth2/userinfo";
-    private static final String AUTH_HEADER = "Authorization";
-    private static final String TEMP_AUTH_HEADER = "tempAuthVal";
-    private static final String TOKEN_TYPE = "Bearer";
+	public ApiInvocationHandler() {
+	}
 
-    @Override
-    public boolean handleRequest(MessageContext messageContext) {
-        Map headerMap = (Map) ((Axis2MessageContext) messageContext).getAxis2MessageContext().getProperty(
-                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        String fullPath = (String) ((Axis2MessageContext) messageContext).getProperty("REST_FULL_REQUEST_PATH");
-        String clientId = getClientIdForAuthorizeCall(fullPath);
-        if (clientId == null)
-            clientId = getClientId(fullPath, headerMap, messageContext);
-        return processResponse(clientId, headerMap, fullPath);
-    }
+	public boolean handleRequest(org.apache.synapse.MessageContext messageContext) {
+		handleAPIWise(messageContext);
+		return true;
+	}
 
-    private String getClientIdForAuthorizeCall(String fullPath) {
-        String clientId = null;
-        if (fullPath.contains(AUTH_ENDPOINT)) {
-            if (log.isDebugEnabled()) {
-                log.debug(AUTH_ENDPOINT);
-            }
-            clientId = fullPath.split("client_id=")[1].split("&")[0];
+	private void handleAPIWise(org.apache.synapse.MessageContext messageContext) {
+		String fullPath = (String) ((Axis2MessageContext) messageContext).getProperty("REST_FULL_REQUEST_PATH");
+		Map headerMap = (Map) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+				.getProperty("TRANSPORT_HEADERS");
 
-        }
-        return clientId;
-    }
+		if (fullPath.contains("authorize")) {
+			handleAuthRequest(fullPath, headerMap);
+		} else if (fullPath.contains("token")) {
+			handleTokenRequest(messageContext, headerMap);
+		} else if (fullPath.contains("userinfo"))
+			handleUserInfoRequest(messageContext, headerMap);
+	}
 
-    private String getClientId(String fullPath, Map headerMap, MessageContext messageContext) {
-        String clientId = null;
-        if (fullPath.contains(TOKEN_ENDPOINT) || fullPath.contains(USERINFO_ENDPOINT)) {
-            String basicAuth = (String) headerMap.get(AUTH_HEADER);
-            headerMap.remove(AUTH_HEADER);
-            messageContext.setProperty(TEMP_AUTH_HEADER, basicAuth);
-            clientId = getClientIdForTokenCall(fullPath, basicAuth);
-            if (clientId == null)
-                getClientIdForUserInfoCall(fullPath, basicAuth);
+	private void handleUserInfoRequest(org.apache.synapse.MessageContext messageContext, Map headerMap) {
+		swapHeader(messageContext, headerMap);
+	}
 
-        }
-        return clientId;
+	private void handleTokenRequest(org.apache.synapse.MessageContext messageContext, Map headerMap) {
+		String basicAuth = swapHeader(messageContext, headerMap);
+		String clientId = getTokenClientKey(basicAuth);
+		processTokenResponse(headerMap, clientId);
+	}
 
-    }
+	private void handleAuthRequest(String fullPath, Map headerMap) {
+		String clientId = getAuthClientKey(fullPath);
+		processTokenResponse(headerMap, clientId);
+	}
 
-    private String getClientIdForUserInfoCall(String fullPath, String basicAuth) {
-        String accessToken = null;
-        if (fullPath.contains(TOKEN_ENDPOINT)) {
-            if (log.isDebugEnabled()) {
-                log.debug(USERINFO_ENDPOINT);
-            }
-            accessToken = APIManagerDBUtil.getAccessTokenForUserInfo(basicAuth.split(" ")[1]);
-        }
-        return accessToken;
+	private String getTokenClientKey(String basicAuth) {
+		byte[] valueDecoded = Base64.decodeBase64(basicAuth.split(" ")[1].getBytes());
+		String decodeString = new String(valueDecoded);
+		return decodeString.split(":")[0];
+	}
 
-    }
+	private String getAuthClientKey(String fullPath) {
+		return fullPath.split("client_id=")[1].split("&")[0];
+	}
 
-    private String getClientIdForTokenCall(String fullPath, String basicAuth) {
-        String clientId = null;
-        if (fullPath.contains(TOKEN_ENDPOINT)) {
-            if (log.isDebugEnabled()) {
-                log.debug(TOKEN_ENDPOINT);
-            }
-            byte[] valueDecoded = Base64.decodeBase64(basicAuth.split(" ")[1].getBytes());
-            String decodeString = new String(valueDecoded);
-            clientId = decodeString.split(":")[0];
-        }
-        return clientId;
-    }
+	private String swapHeader(org.apache.synapse.MessageContext messageContext, Map headerMap) {
+		String basicAuth = (String) headerMap.get("Authorization");
+		messageContext.setProperty("tempAuthVal", basicAuth);
+		return basicAuth;
+	}
 
-    private boolean processResponse(String clientId, Map headerMap, String fullPath) {
+	private void processTokenResponse(Map headerMap, String clientId) {
+		String token = null;
+		if (spToken.containsKey(clientId)) {
+			token = (String) spToken.get(clientId);
+		} else {
+			token = APIManagerDBUtil.getTokenDetailsFromAPIManagerDB(clientId).getAccessToken();
+			spToken.put(clientId, token);
+		}
+		headerMap.put("Authorization", "Bearer " + token);
+	}
 
-        if (clientId == null)
-            return false;
+	private void handleByTokenPool(String clientId, TokenDTO tokenDTO) {
+		Map<String, String> propertyMap = ReadPropertyFile.getPropertyFile();
+		if (((String) propertyMap.get("enable_token_pool")).equals("true")) {
+			if (log.isDebugEnabled()) {
+				log.debug("TOken Pool Service Enabled for Insertion");
+			}
+			AddNewSpDTO newSpDto = new AddNewSpDTO();
+			ArrayList<TokenDTO> tokenList = new ArrayList();
 
-        else if (fullPath.contains(USERINFO_ENDPOINT)) {
-            headerMap.put(AUTH_HEADER, TOKEN_TYPE + clientId);
-            return true;
+			newSpDto.setOwnerId(clientId);
+			tokenDTO.setTokenAuth(getbase64EncodedTokenAouth(tokenDTO.getTokenAuth()));
+			tokenList.add(tokenDTO);
+			newSpDto.setSpTokenList(tokenList);
+			callTokenPool(newSpDto);
+		}
+	}
 
-        }
+	public boolean handleResponse(org.apache.synapse.MessageContext messageContext) {
+		return true;
+	}
 
-        TokenDTO tokenDTO = APIManagerDBUtil.getTokenDetailsFromAPIManagerDB(clientId);
-        headerMap.put(AUTH_HEADER, TOKEN_TYPE + tokenDTO.getAccessToken());
-        handleByTokenPool(clientId, tokenDTO);
-        return true;
+	private void callTokenPool(final AddNewSpDTO newSpDto) {
+		ExecutorService executorService = Executors.newFixedThreadPool(1);
 
-    }
+		executorService.execute(new Runnable() {
+			public void run() {
+				ApiInvocationHandler.log.debug("Calling Token Pool Endpoint");
 
-    private void handleByTokenPool(String clientId, TokenDTO tokenDTO) {
-        Map<String, String> propertyMap = ReadPropertyFile.getPropertyFile();
-        if (propertyMap.get(TOKEN_POOL_ENABLED).equals("true")) {
-            if (log.isDebugEnabled()) {
-                log.debug("TOken Pool Service Enabled for Insertion");
-            }
-            AddNewSpDTO newSpDto = new AddNewSpDTO();
-            ArrayList<TokenDTO> tokenList = new ArrayList<TokenDTO>();
+				TokenPoolUtil.callTokenPoolToAddSpToken(newSpDto);
+			}
+		});
+		executorService.shutdown();
+	}
 
-            newSpDto.setOwnerId(clientId);
-            tokenDTO.setTokenAuth(getbase64EncodedTokenAouth(tokenDTO.getTokenAuth()));
-            tokenList.add(tokenDTO);
-            newSpDto.setSpTokenList(tokenList);
-            callTokenPool(newSpDto);
-        }
-    }
-
-    @Override
-    public boolean handleResponse(MessageContext messageContext) {
-        return true;
-    }
-
-    private void callTokenPool(final AddNewSpDTO newSpDto) {
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-
-        executorService.execute(new Runnable() {
-            public void run() {
-                log.debug("Calling Token Pool Endpoint");
-
-                TokenPoolUtil.callTokenPoolToAddSpToken(newSpDto);
-            }
-        });
-        executorService.shutdown();
-    }
-
-    private String getbase64EncodedTokenAouth(String plainTextAouth) {
-        byte[] bytesEncoded = Base64.encodeBase64(plainTextAouth.getBytes());
-        String base64EncodedAouthString = new String(bytesEncoded);
-        log.debug("ecncoded value is " + base64EncodedAouthString);
-        return base64EncodedAouthString;
-    }
+	private String getbase64EncodedTokenAouth(String plainTextAouth) {
+		byte[] bytesEncoded = Base64.encodeBase64(plainTextAouth.getBytes());
+		String base64EncodedAouthString = new String(bytesEncoded);
+		log.debug("ecncoded value is " + base64EncodedAouthString);
+		return base64EncodedAouthString;
+	}
 }
